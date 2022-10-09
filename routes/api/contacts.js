@@ -1,83 +1,13 @@
 const express = require("express");
-const Joi = require("joi");
-
-const contacts = require("../../models/contacts");
-const { RequestError } = require("../../helpers");
-
-const addSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().required(),
-  phone: Joi.string().required(),
-});
-
+const ctrl = require("../../controllers/contacts");
 const router = express.Router();
+const { ctrlWrapper } = require("../../helpers");
+const isValidId = require("../../middlewares/isValidId");
 
-router.get("/", async (req, res, next) => {
-  try {
-    const result = await contacts.listContacts();
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/:id", async (req, res, next) => {
-  try {
-    console.log(req.params);
-    const { id } = req.params;
-    const result = await contacts.getContactById(id);
-    if (!result) {
-      throw RequestError(404, "Not found");
-    }
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post("/", async (req, res, next) => {
-  try {
-    const { error } = addSchema.validate(req.body);
-    if (error) {
-      throw RequestError(400, "Missing required name field");
-    }
-    const result = await contacts.addContact(req.body);
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id", async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const result = await contacts.removeContact(id);
-    if (!result) {
-      throw RequestError(404, "Not found");
-    }
-    res.status(200).json({
-      message: "Contact deleted",
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.put("/:id", async (req, res, next) => {
-  try {
-    const { error } = addSchema.validate(req.body);
-    if (error) {
-      throw RequestError(400, "Missing fields");
-    }
-    const { id } = req.params;
-    const result = await contacts.updateContact(id, req.body);
-    if (!result) {
-      throw RequestError(404, "Not found");
-    }
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
+router.get("/", ctrlWrapper(ctrl.getAll));
+router.get("/:id", isValidId, ctrlWrapper(ctrl.getById));
+router.post("/", ctrlWrapper(ctrl.add));
+router.put("/:id", isValidId, ctrlWrapper(ctrl.update));
+router.delete("/:id", isValidId, ctrlWrapper(ctrl.remove));
+router.patch("/:id/favorite", isValidId, ctrlWrapper(ctrl.updateStatusContact));
 module.exports = router;
