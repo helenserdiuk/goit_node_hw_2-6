@@ -11,6 +11,9 @@ const login = async (req, res) => {
     throw RequestError(401, "Email not found");
   }
   const passwordCompare = await bcrypt.compare(password, user.password);
+  if (!user.verify) {
+    throw RequestError(401, "Email not verify");
+  }
   if (!passwordCompare) {
     throw RequestError(401, "Password wrong");
   }
